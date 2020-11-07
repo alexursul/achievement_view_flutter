@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 enum AchievementState {
   opening,
@@ -28,6 +29,9 @@ class AchievementWidget extends StatefulWidget {
   final TextStyle textStyleSubTitle;
   final String title;
   final String subTitle;
+  final double cardHeight;
+  final AchievementWidgetController controller;
+  final double fixedTitleWidth;
 
   const AchievementWidget({
     Key key,
@@ -47,7 +51,10 @@ class AchievementWidget extends StatefulWidget {
     this.textStyleTitle,
     this.textStyleSubTitle,
     this.title = "",
-    this.subTitle = "",
+    this.subTitle,
+    this.cardHeight,
+    this.controller,
+    this.fixedTitleWidth,
   }) : super(key: key);
 
   @override
@@ -71,61 +78,70 @@ class AchievementWidgetState extends State<AchievementWidget>
   AnimationController _controllerSubTitle;
   Animation<Offset> _subTitleSlideUp;
 
+  bool _isForcedClosing = false;
+  String _title;
+
   @override
   void initState() {
+    _title = widget.title;
     _controllerScale =
         AnimationController(vsync: this, duration: Duration(milliseconds: 300));
     _curvedAnimationScale =
-        CurvedAnimation(parent: _controllerScale, curve: Curves.easeInOut)
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              _controllerSize.forward();
-            }
-            if (status == AnimationStatus.dismissed) {
-              _notifyListener(AchievementState.closed);
-              widget.finish();
-            }
-          });
+    CurvedAnimation(parent: _controllerScale, curve: Curves.easeInOut)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _controllerSize.forward();
+        }
+        if (status == AnimationStatus.dismissed) {
+          _notifyListener(AchievementState.closed);
+          widget.finish();
+        }
+      });
 
     _controllerSize =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 500))
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              _controllerTitle.forward();
-            }
-            if (status == AnimationStatus.dismissed) {
-              _controllerScale.reverse();
-            }
-          });
+    AnimationController(vsync: this, duration: Duration(milliseconds: 500))
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _controllerTitle.forward();
+        }
+        if (status == AnimationStatus.dismissed) {
+          _controllerScale.reverse();
+        }
+      });
     _curvedAnimationSize =
         CurvedAnimation(parent: _controllerSize, curve: Curves.ease);
 
     _controllerTitle =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 250))
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              _controllerSubTitle.forward();
-            }
-            if (status == AnimationStatus.dismissed) {
-              _controllerSize.reverse();
-            }
-          });
+    AnimationController(vsync: this, duration: Duration(milliseconds: 250))
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _controllerSubTitle.forward();
+        }
+        if (status == AnimationStatus.dismissed) {
+          _controllerSize.reverse();
+        }
+      });
 
     _titleSlideUp = _buildAnimatedContent(_controllerTitle);
 
     _controllerSubTitle =
-        AnimationController(vsync: this, duration: Duration(milliseconds: 250))
-          ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              _notifyListener(AchievementState.open);
-              _startTime();
-            }
-            if (status == AnimationStatus.dismissed) {
-              _controllerTitle.reverse();
-            }
-          });
+    AnimationController(vsync: this, duration: Duration(milliseconds: 250))
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _notifyListener(AchievementState.open);
+          _startTime();
+        }
+        if (status == AnimationStatus.dismissed) {
+          _controllerTitle.reverse();
+        }
+      });
 
     _subTitleSlideUp = _buildAnimatedContent(_controllerSubTitle);
+    if (widget.controller != null) {
+      widget.controller.close = _close;
+      widget.controller.changeTitle = _changeTitle;
+    }
+
     super.initState();
     show();
   }
@@ -135,11 +151,25 @@ class AchievementWidgetState extends State<AchievementWidget>
     _controllerScale.forward();
   }
 
+  void _changeTitle(String newTitle) {
+    _controllerTitle.reverse();
+    Timer(_controllerTitle.duration, () {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _title = newTitle;
+      });
+      _controllerTitle.forward();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Container(
-        constraints: BoxConstraints(minHeight: HEIGHT_CARD),
+        constraints: BoxConstraints(minHeight: widget.cardHeight ?? HEIGHT_CARD),
         margin: EdgeInsets.all(MARGIN_CARD),
         child: ScaleTransition(
           scale: _curvedAnimationScale,
@@ -162,6 +192,7 @@ class AchievementWidgetState extends State<AchievementWidget>
         },
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             _buildIcon(),
             _buildContent(),
@@ -173,7 +204,7 @@ class AchievementWidgetState extends State<AchievementWidget>
 
   Widget _buildIcon() {
     return Container(
-      width: HEIGHT_CARD,
+      width: widget.cardHeight ?? HEIGHT_CARD,
       child: widget.icon,
     );
   }
@@ -195,8 +226,10 @@ class AchievementWidgetState extends State<AchievementWidget>
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   _buildTitle(),
-                  SizedBox(height: 2),
-                  _buildSubTitle(),
+                  if (widget.subTitle != null) ...[
+                    SizedBox(height: 2),
+                    _buildSubTitle(),
+                  ]
                 ],
               ),
             ),
@@ -218,11 +251,15 @@ class AchievementWidgetState extends State<AchievementWidget>
           ),
         );
       },
-      child: Text(
-        widget.title,
-        softWrap: true,
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
-            .merge(widget.textStyleTitle),
+      child: Container(
+        width: widget.fixedTitleWidth,
+        child: Text(
+          _title,
+          softWrap: true,
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+              .merge(widget.textStyleTitle),
+        ),
       ),
     );
   }
@@ -287,8 +324,18 @@ class AchievementWidgetState extends State<AchievementWidget>
     }
   }
 
+  void _close() {
+    _isForcedClosing = true;
+    _notifyListener(AchievementState.closing);
+    _controllerSubTitle.reverse();
+  }
+
   void _startTime() {
     Future.delayed(widget.duration, () {
+      if (_isForcedClosing) {
+        return;
+      }
+
       _notifyListener(AchievementState.closing);
       _controllerSubTitle.reverse();
     });
@@ -302,4 +349,9 @@ class AchievementWidgetState extends State<AchievementWidget>
     _controllerSubTitle.dispose();
     super.dispose();
   }
+}
+
+class AchievementWidgetController {
+  Function close;
+  Function(String newTitle) changeTitle;
 }

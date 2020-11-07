@@ -17,11 +17,14 @@ class AchievementView {
   final String title;
   final String subTitle;
   final double elevation;
+  final EdgeInsets margin;
+  final double cardHeight;
+  final double fixedTitleWidth;
 
   OverlayEntry _overlayEntry;
+  AchievementWidgetController _widgetController;
 
-  AchievementView(
-    this._context, {
+  AchievementView(this._context, {
     this.elevation = 2,
     this.onTab,
     this.listener,
@@ -38,30 +41,41 @@ class AchievementView {
     this.alignment = Alignment.topCenter,
     this.duration = const Duration(seconds: 3),
     this.title = "My Title",
-    this.subTitle = "My subtitle with max 1 line",
-  });
+    this.subTitle,
+    this.margin,
+    this.cardHeight,
+    this.fixedTitleWidth,
+  }) {
+    _widgetController = AchievementWidgetController();
+  }
 
   OverlayEntry _buildOverlay() {
     return OverlayEntry(builder: (context) {
       return Align(
         alignment: alignment,
-        child: AchievementWidget(
-          title: title,
-          subTitle: subTitle,
-          duration: duration,
-          listener: listener,
-          onTab: onTab,
-          isCircle: isCircle,
-          elevation: elevation,
-          textStyleSubTitle: textStyleSubTitle,
-          textStyleTitle: textStyleTitle,
-          icon: icon,
-          typeAnimationContent: typeAnimationContent,
-          borderRadius: borderRadius,
-          color: color,
-          finish: () {
-            _hide();
-          },
+        child: Container(
+          margin: margin,
+          child: AchievementWidget(
+            title: title,
+            subTitle: subTitle,
+            duration: duration,
+            listener: listener,
+            onTab: onTab,
+            isCircle: isCircle,
+            elevation: elevation,
+            textStyleSubTitle: textStyleSubTitle,
+            textStyleTitle: textStyleTitle,
+            icon: icon,
+            typeAnimationContent: typeAnimationContent,
+            borderRadius: borderRadius,
+            color: color,
+            finish: () {
+              _hide();
+            },
+            cardHeight: cardHeight,
+            controller: _widgetController,
+            fixedTitleWidth: fixedTitleWidth,
+          ),
         ),
       );
     });
@@ -77,5 +91,13 @@ class AchievementView {
   void _hide() {
     _overlayEntry?.remove();
     _overlayEntry = null;
+  }
+
+  void close() {
+    _widgetController.close();
+  }
+
+  void changeTitle(String newTitle) {
+    _widgetController.changeTitle(newTitle);
   }
 }
