@@ -15,9 +15,9 @@ enum AnimationTypeAchievement {
 }
 
 class AchievementWidget extends StatefulWidget {
-  final Function() finish;
-  final GestureTapCallback onTab;
-  final Function(AchievementState) listener;
+  final Function()? finish;
+  final GestureTapCallback? onTab;
+  final Function(AchievementState)? listener;
   final Duration duration;
   final bool isCircle;
   final Widget icon;
@@ -25,16 +25,16 @@ class AchievementWidget extends StatefulWidget {
   final double borderRadius;
   final double elevation;
   final Color color;
-  final TextStyle textStyleTitle;
-  final TextStyle textStyleSubTitle;
+  final TextStyle? textStyleTitle;
+  final TextStyle? textStyleSubTitle;
   final String title;
-  final String subTitle;
-  final double cardHeight;
-  final AchievementWidgetController controller;
-  final double fixedTitleWidth;
+  final String? subTitle;
+  final double? cardHeight;
+  final AchievementWidgetController? controller;
+  final double? fixedTitleWidth;
 
   const AchievementWidget({
-    Key key,
+    Key? key,
     this.finish,
     this.duration = const Duration(seconds: 3),
     this.listener,
@@ -66,20 +66,20 @@ class AchievementWidgetState extends State<AchievementWidget>
   static const HEIGHT_CARD = 60.0;
   static const MARGIN_CARD = 20.0;
 
-  AnimationController _controllerScale;
-  CurvedAnimation _curvedAnimationScale;
+  late AnimationController _controllerScale;
+  late CurvedAnimation _curvedAnimationScale;
 
-  AnimationController _controllerSize;
-  CurvedAnimation _curvedAnimationSize;
+  late AnimationController _controllerSize;
+  late CurvedAnimation _curvedAnimationSize;
 
-  AnimationController _controllerTitle;
-  Animation<Offset> _titleSlideUp;
+  late AnimationController _controllerTitle;
+  late Animation<Offset> _titleSlideUp;
 
-  AnimationController _controllerSubTitle;
-  Animation<Offset> _subTitleSlideUp;
+  late AnimationController _controllerSubTitle;
+  late Animation<Offset> _subTitleSlideUp;
 
   bool _isForcedClosing = false;
-  String _title;
+  late String _title;
 
   @override
   void initState() {
@@ -94,7 +94,9 @@ class AchievementWidgetState extends State<AchievementWidget>
         }
         if (status == AnimationStatus.dismissed) {
           _notifyListener(AchievementState.closed);
-          widget.finish();
+          if (widget.finish != null) {
+            widget.finish!();
+          }
         }
       });
 
@@ -138,8 +140,8 @@ class AchievementWidgetState extends State<AchievementWidget>
 
     _subTitleSlideUp = _buildAnimatedContent(_controllerSubTitle);
     if (widget.controller != null) {
-      widget.controller.close = _close;
-      widget.controller.changeTitle = _changeTitle;
+      widget.controller!.close = _close;
+      widget.controller!.changeTitle = _changeTitle;
     }
 
     super.initState();
@@ -153,7 +155,7 @@ class AchievementWidgetState extends State<AchievementWidget>
 
   void _changeTitle(String newTitle) {
     _controllerTitle.reverse();
-    Timer(_controllerTitle.duration, () {
+    Timer(_controllerTitle.duration ?? Duration(milliseconds: 500), () {
       if (!mounted) {
         return;
       }
@@ -187,7 +189,7 @@ class AchievementWidgetState extends State<AchievementWidget>
       child: InkWell(
         onTap: () {
           if (widget.onTab != null) {
-            widget?.onTab();
+            widget.onTab!();
           }
         },
         child: Row(
@@ -277,7 +279,7 @@ class AchievementWidgetState extends State<AchievementWidget>
           );
         },
         child: Text(
-          widget.subTitle,
+          widget.subTitle ?? '',
           style: TextStyle(color: Colors.white).merge(widget.textStyleSubTitle),
         ));
   }
@@ -320,7 +322,7 @@ class AchievementWidgetState extends State<AchievementWidget>
 
   void _notifyListener(AchievementState state) {
     if (widget.listener != null) {
-      widget.listener(state);
+      widget.listener!(state);
     }
   }
 
@@ -352,6 +354,6 @@ class AchievementWidgetState extends State<AchievementWidget>
 }
 
 class AchievementWidgetController {
-  Function close;
-  Function(String newTitle) changeTitle;
+  late Function close;
+  late Function(String newTitle) changeTitle;
 }

@@ -6,27 +6,27 @@ class AchievementView {
   final AlignmentGeometry alignment;
   final Duration duration;
   final GestureTapCallback onTab;
-  final Function(AchievementState) listener;
+  final Function(AchievementState)? listener;
   final bool isCircle;
   final Widget icon;
   final AnimationTypeAchievement typeAnimationContent;
   final double borderRadius;
   final Color color;
-  final TextStyle textStyleTitle;
-  final TextStyle textStyleSubTitle;
+  final TextStyle? textStyleTitle;
+  final TextStyle? textStyleSubTitle;
   final String title;
-  final String subTitle;
+  final String? subTitle;
   final double elevation;
-  final EdgeInsets margin;
-  final double cardHeight;
-  final double fixedTitleWidth;
+  final EdgeInsets? margin;
+  final double? cardHeight;
+  final double? fixedTitleWidth;
 
-  OverlayEntry _overlayEntry;
+  OverlayEntry? _overlayEntry;
   AchievementWidgetController _widgetController;
 
   AchievementView(this._context, {
     this.elevation = 2,
-    this.onTab,
+    required this.onTab,
     this.listener,
     this.isCircle = false,
     this.icon = const Icon(
@@ -45,9 +45,9 @@ class AchievementView {
     this.margin,
     this.cardHeight,
     this.fixedTitleWidth,
-  }) {
+  }):
     _widgetController = AchievementWidgetController();
-  }
+
 
   OverlayEntry _buildOverlay() {
     return OverlayEntry(builder: (context) {
@@ -84,7 +84,7 @@ class AchievementView {
   void show() {
     if (_overlayEntry == null) {
       _overlayEntry = _buildOverlay();
-      Overlay.of(_context).insert(_overlayEntry);
+      Overlay.of(_context)!.insert(_overlayEntry!);
     }
   }
 
